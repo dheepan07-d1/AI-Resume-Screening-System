@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.pyc
+
+# Virtual environment
+venv/
+
+# Environment variables
+.env
+
+# Cache
+.cache/
+
+# VS Code
+.vscode/
+
+# Models
+*.pkl
+*.h5
+
+# Dataset resumes
+dataset/
+*.pdf
+*.docx
+
+# Streamlit
+.streamlit/
+
+# OS
+.DS_Store
+Thumbs.db
