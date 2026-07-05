@@ -4,11 +4,13 @@ import shutil
 
 import streamlit as st
 import pandas as pd
-import requests
 import altair as alt
 
+
+from matching.ranking import rank_resumes
 from parser.parser import extract_resume
 from explainability.explain import explain_match
+
 
 
 # -----------------------------
@@ -16,10 +18,15 @@ from explainability.explain import explain_match
 # -----------------------------
 
 st.set_page_config(
+
     page_title="AI Resume Screening System",
+
     page_icon="📄",
+
     layout="wide"
+
 )
+
 
 
 # -----------------------------
@@ -27,188 +34,139 @@ st.set_page_config(
 # -----------------------------
 
 st.markdown(
-    """
-    <style>
+"""
+<style>
 
 
-    /* Main App Background */
-    .stApp {
+.stApp {
 
-        background-color:#2E1065;
+    background-color:#2E1065;
 
-    }
+}
 
 
-    /* Main Heading */
-    h1 {
+h1 {
 
-        color:white;
-        font-size:42px;
-        font-weight:900;
+    color:white;
+    font-weight:900;
 
-    }
+}
 
 
-    /* Normal Text */
-    p,label,h2,h3 {
+p,label,h2,h3 {
 
-        color:white !important;
-        font-weight:600;
+    color:white !important;
+    font-weight:600;
 
-    }
+}
 
 
 
-    /* =========================
-       FILE UPLOADER
-       ========================= */
+/* Upload Area */
 
+section[data-testid="stFileUploader"] {
 
-    section[data-testid="stFileUploader"] {
 
-        background-color:#FDBA74;
-        padding:22px;
-        border-radius:18px;
-        border:3px solid #FB923C;
+    background-color:#FDBA74;
 
-    }
+    padding:20px;
 
+    border-radius:18px;
 
-    section[data-testid="stFileUploader"] * {
+    border:3px solid #FB923C;
 
-        color:white !important;
-        font-weight:bold;
+}
 
-    }
 
+section[data-testid="stFileUploader"] * {
 
-    section[data-testid="stFileUploader"] button {
+    color:white !important;
 
-        background-color:#EA580C !important;
-        color:white !important;
-        border-radius:12px;
-        border:2px solid white;
+    font-weight:bold;
 
-    }
+}
 
 
+section[data-testid="stFileUploader"] button {
 
-    /* =========================
-       JOB DESCRIPTION BOX
-       ========================= */
+    background-color:#EA580C !important;
 
+    color:white !important;
 
-    textarea {
+}
 
-        background-color:#312E81 !important;
-        color:white !important;
-        border-radius:18px !important;
-        border:3px solid #A855F7 !important;
-        font-weight:bold;
 
-    }
 
+/* Text Area */
 
+textarea {
 
-    /* =========================
-       BUTTON
-       ========================= */
 
+    background-color:#312E81 !important;
 
-    .stButton button {
+    color:white !important;
 
-        background-color:#9333EA;
-        color:white;
-        border-radius:15px;
-        padding:12px 30px;
-        border:none;
-        font-weight:bold;
+    border-radius:15px !important;
 
-    }
+    border:2px solid #A855F7 !important;
 
+}
 
-    .stButton button:hover {
 
-        background-color:#7E22CE;
-        color:white;
 
-    }
+/* Button */
 
+.stButton button {
 
 
+    background-color:#9333EA;
 
-    /* =========================
-       DASHBOARD CARDS
-       ========================= */
+    color:white;
 
+    border-radius:15px;
 
-    div[data-testid="metric-container"] {
+    font-weight:bold;
 
-        background-color:#4C1D95;
-        padding:25px;
-        border-radius:18px;
-        border-left:10px solid #22C55E;
+}
 
-    }
 
+.stButton button:hover {
 
-    div[data-testid="metric-container"] * {
 
-        color:white !important;
+    background-color:#7E22CE;
 
-    }
+    color:white;
 
+}
 
 
 
-    /* =========================
-       DATA TABLE
-       ========================= */
+/* Cards */
 
+div[data-testid="metric-container"] {
 
-    div[data-testid="stDataFrame"] {
 
-        background-color:#312E81;
-        border-radius:15px;
+    background-color:#4C1D95;
 
-    }
+    padding:20px;
 
+    border-radius:15px;
 
+    border-left:8px solid #22C55E;
 
+}
 
-    /* =========================
-       EXPANDER
-       ========================= */
 
+div[data-testid="metric-container"] * {
 
-    div[data-testid="stExpander"] {
+    color:white !important;
 
-        background-color:#1E1B4B;
-        border-radius:18px;
-        border:2px solid #A855F7;
+}
 
-    }
 
-
-    div[data-testid="stExpander"] * {
-
-        color:white;
-
-    }
-
-
-
-    /* Success / Info boxes */
-    div[data-testid="stAlert"] {
-
-        border-radius:15px;
-
-    }
-
-
-    </style>
-    """,
-    unsafe_allow_html=True
+</style>
+""",
+unsafe_allow_html=True
 )
 
 
@@ -220,6 +178,7 @@ st.markdown(
 st.title(
     "📄 AI Resume Screening & Job Matching System"
 )
+
 
 st.write(
     "Upload resumes, enter Job Description and get AI-powered candidate ranking."
@@ -261,6 +220,7 @@ job_description = st.text_area(
 
 
 
+
 # -----------------------------
 # Button
 # -----------------------------
@@ -278,7 +238,6 @@ if st.button(
         )
 
 
-
     elif not job_description.strip():
 
 
@@ -291,62 +250,46 @@ if st.button(
     else:
 
 
-
         with st.spinner(
-            "Processing Resumes..."
+            "AI analyzing resumes..."
         ):
 
 
 
-            files=[]
+            temp_folder=tempfile.mkdtemp()
+
 
 
             for file in uploaded_files:
 
 
-                files.append(
+                path=os.path.join(
 
-                    (
+                    temp_folder,
 
-                        "resumes",
-
-                        (
-
-                            file.name,
-
-                            file.getvalue(),
-
-                            file.type
-
-                        )
-
-                    )
+                    file.name
 
                 )
 
 
-
-            response=requests.post(
-
-
-                "http://127.0.0.1:8000/rank",
+                with open(path,"wb") as f:
 
 
-                data={
-
-                    "description":
-                    job_description
-
-                },
+                    f.write(
+                        file.getbuffer()
+                    )
 
 
-                files=files
+
+            # AI Ranking directly
+
+            results = rank_resumes(
+
+                temp_folder,
+
+                job_description
 
             )
-
-
-
-            results=response.json()["candidates"]
 
 
 
@@ -358,13 +301,11 @@ if st.button(
 
 
         # -----------------------------
-        # DATAFRAME
+        # DataFrame
         # -----------------------------
 
 
-        df=pd.DataFrame(
-            results
-        )
+        df=pd.DataFrame(results)
 
 
         df.index+=1
@@ -374,9 +315,8 @@ if st.button(
 
 
 
-
         # -----------------------------
-        # DASHBOARD
+        # Dashboard
         # -----------------------------
 
 
@@ -405,10 +345,12 @@ if st.button(
 
             "📊 Average Score",
 
-            str(round(
-                df["score"].mean(),
-                2
-            ))+"%"
+            str(
+                round(
+                    df["score"].mean(),
+                    2
+                )
+            )+"%"
 
         )
 
@@ -427,9 +369,7 @@ if st.button(
 
 
 
-        # -----------------------------
-        # TABLE
-        # -----------------------------
+        # Ranking Table
 
 
         st.subheader(
@@ -447,9 +387,7 @@ if st.button(
 
 
 
-        # -----------------------------
-        # GREEN CHART
-        # -----------------------------
+        # Green Chart
 
 
         st.subheader(
@@ -457,7 +395,7 @@ if st.button(
         )
 
 
-        green_chart = (
+        chart=(
 
             alt.Chart(
                 df.reset_index()
@@ -480,7 +418,7 @@ if st.button(
 
         st.altair_chart(
 
-            green_chart,
+            chart,
 
             use_container_width=True
 
@@ -488,23 +426,15 @@ if st.button(
 
 
 
-        # -----------------------------
-        # CSV
-        # -----------------------------
+
+        # Download CSV
 
 
-        csv=(
-
-            df.to_csv(
-                index=False
-            )
-
-            .encode(
-                "utf-8"
-            )
-
+        csv=df.to_csv(
+            index=False
+        ).encode(
+            "utf-8"
         )
-
 
 
         st.download_button(
@@ -527,39 +457,13 @@ if st.button(
 
 
         # -----------------------------
-        # EXPLANATION
+        # Explanation
         # -----------------------------
 
 
         st.subheader(
             "📑 Resume Explanations"
         )
-
-
-
-        temp_folder=tempfile.mkdtemp()
-
-
-
-        for file in uploaded_files:
-
-
-            path=os.path.join(
-
-                temp_folder,
-
-                file.name
-
-            )
-
-
-            with open(path,"wb") as f:
-
-
-                f.write(
-                    file.getbuffer()
-                )
-
 
 
 
@@ -574,7 +478,6 @@ if st.button(
                 candidate["resume"]
 
             )
-
 
 
             resume_text=extract_resume(
@@ -593,11 +496,8 @@ if st.button(
 
 
 
-
             with st.expander(
-
                 candidate["resume"]
-
             ):
 
 
@@ -605,12 +505,10 @@ if st.button(
                 score=candidate["score"]
 
 
+
                 st.write(
-
                     f"### Match Score: {score}%"
-
                 )
-
 
 
 
@@ -647,32 +545,22 @@ if st.button(
 
 
 
-
                 st.write(
                     "### ✅ Matched Skills"
                 )
 
 
+                st.write(
 
-                if explanation["matched"]:
-
-
-                    st.write(
-
-                        ", ".join(
-                            explanation["matched"]
-                        )
-
+                    ", ".join(
+                        explanation["matched"]
                     )
 
+                    if explanation["matched"]
 
-                else:
+                    else "None"
 
-
-                    st.write(
-                        "None"
-                    )
-
+                )
 
 
 
@@ -681,25 +569,17 @@ if st.button(
                 )
 
 
+                st.write(
 
-                if explanation["missing"]:
-
-
-                    st.write(
-
-                        ", ".join(
-                            explanation["missing"]
-                        )
-
+                    ", ".join(
+                        explanation["missing"]
                     )
 
+                    if explanation["missing"]
 
-                else:
+                    else "None"
 
-
-                    st.write(
-                        "None"
-                    )
+                )
 
 
 
