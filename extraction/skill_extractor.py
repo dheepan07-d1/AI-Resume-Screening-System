@@ -138,7 +138,80 @@ SKILLS = {
     "patient care",
     "clinical",
     "nursing"
+
+
+    # Programming
+    "python",
+    "java",
+    "c",
+    "c++",
+    "sql",
+    "javascript",
+
+    # AI / Data
+    "machine learning",
+    "deep learning",
+    "artificial intelligence",
+    "data science",
+    "nlp",
+    "tensorflow",
+    "pytorch",
+    "pandas",
+    "numpy",
+
+    # Web
+    "html",
+    "css",
+    "react",
+    "flask",
+    "fastapi",
+    "streamlit",
+
+    # Cloud
+    "aws",
+    "docker",
+    "git",
+    "github",
+
+    # Banking
+    "banking",
+    "finance",
+    "accounting",
+    "loan",
+    "mortgage banking",
+    "risk management",
+    "underwriting",
+    "compliance",
+
+    # Education
+    "teacher",
+    "teaching",
+    "education",
+    "professor",
+    "training",
+    "communication",
+
+    # Engineering
+    "engineering",
+    "mechanical",
+    "electrical",
+    "civil",
+    "design",
+    "autocad",
+
+    # Office
+    "excel",
+    "word",
+    "powerpoint",
+
+    # Business
+    "management",
+    "leadership",
+    "marketing",
+    "sales",
+    "customer service"
 }
+
 
 
 
